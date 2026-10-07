@@ -1,0 +1,13 @@
+{
+  "name": "website-sekolah-serverless",
+  "version": "1.0.0",
+  "description": "Website sekolah berbasis AWS Lambda (latihan serverless) - lihat PRD.md dan README.md",
+  "private": true,
+  "scripts": {
+    "build": "sam build",
+    "deploy": "sam deploy",
+    "deploy:guided": "sam deploy --guided",
+    "local": "sam local start-api",
+    "validate": "sam validate"
+  }
+}

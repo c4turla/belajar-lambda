@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Galeri - Website Sekolah</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <h1>🏫 Website Sekolah</h1>
+      <nav class="site-nav">
+        <a href="index.html">Beranda</a>
+        <a href="berita.html">Berita</a>
+        <a href="guru.html">Guru &amp; Staff</a>
+        <a href="galeri.html">Galeri</a>
+        <a href="ppdb.html">PPDB</a>
+        <a href="kontak.html">Kontak</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <h2>Galeri Foto</h2>
+    <div id="galeri-container" class="grid">
+      <p class="muted">Memuat galeri...</p>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    Latihan AWS Lambda — Website Sekolah Serverless
+  </footer>
+
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script>
+    async function loadGaleri() {
+      const container = document.getElementById("galeri-container");
+      try {
+        const items = await apiGet("/galeri");
+        if (items.length === 0) {
+          container.innerHTML = '<p class="muted">Belum ada foto.</p>';
+          return;
+        }
+        container.innerHTML = items
+          .map(
+            (g) => `
+          <div class="card" style="padding:0; overflow:hidden">
+            <img src="${escapeHtml(g.gambar_url)}" alt="${escapeHtml(g.judul)}" />
+            <div style="padding:1rem">
+              <h3>${escapeHtml(g.judul)}</h3>
+              ${g.deskripsi ? `<p class="muted">${escapeHtml(g.deskripsi)}</p>` : ""}
+            </div>
+          </div>
+        `
+          )
+          .join("");
+      } catch (err) {
+        container.innerHTML = `<p class="muted">Gagal memuat galeri: ${escapeHtml(err.message)}</p>`;
+      }
+    }
+    loadGaleri();
+  </script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+# Konfigurasi default untuk `sam deploy`.
+# File ini NORMALNYA otomatis dibuat oleh `sam deploy --guided` (lihat README.md
+# Langkah 4). Template ini disediakan supaya kamu tahu parameter apa saja yang
+# perlu diisi - silakan jalankan `sam deploy --guided` saja untuk pertama kali
+# dan biarkan SAM CLI menimpa/membuat ulang file ini secara interaktif.
+
+version = 0.1
+
+[default.deploy.parameters]
+stack_name = "website-sekolah-serverless"
+resolve_s3 = true
+s3_prefix = "website-sekolah-serverless"
+region = "ap-southeast-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+# Ganti semua nilai <...> di bawah ini sesuai resource yang sudah kamu buat
+# manual (VPC, Subnet, Security Group, RDS Proxy, Secrets Manager) mengikuti
+# README.md Langkah 1-3.
+parameter_overrides = [
+  "VpcSubnetIds=<subnet-xxxxxxxx>,<subnet-yyyyyyyy>",
+  "VpcSecurityGroupId=<sg-xxxxxxxx>",
+  "DbProxyEndpoint=<nama-proxy>.proxy-xxxxxxx.<region>.rds.amazonaws.com",
+  "DbName=sekolah_db",
+  "DbSecretArn=arn:aws:secretsmanager:<region>:<account-id>:secret:<nama-secret>",
+  "CorsAllowOrigin=*"
+]

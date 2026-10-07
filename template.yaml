@@ -1,0 +1,201 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Website Sekolah Serverless (Latihan AWS Lambda) - REST API backend.
+  Lambda berjalan di dalam VPC dan terhubung ke RDS MySQL lewat RDS Proxy.
+  Lihat README.md untuk langkah setup lengkap.
+
+# ---------------------------------------------------------------------------
+# Parameter: diisi saat `sam deploy --guided`, nilainya didapat dari
+# infrastruktur yang sudah kamu buat manual (VPC, RDS, RDS Proxy, Secret).
+# ---------------------------------------------------------------------------
+Parameters:
+  VpcSubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Daftar Subnet ID (privat) tempat Lambda berjalan. Harus satu VPC dengan RDS Proxy.
+  VpcSecurityGroupId:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: Security Group yang diizinkan oleh Security Group RDS Proxy pada port 3306.
+  DbProxyEndpoint:
+    Type: String
+    Description: Endpoint RDS Proxy, contoh "my-proxy.proxy-xxxxxxx.ap-southeast-1.rds.amazonaws.com"
+  DbName:
+    Type: String
+    Default: sekolah_db
+    Description: Nama database MySQL (lihat schema.sql)
+  DbSecretArn:
+    Type: String
+    Description: ARN Secrets Manager secret yang menyimpan username/password DB (secret yang sama dipakai RDS Proxy)
+  CorsAllowOrigin:
+    Type: String
+    Default: "*"
+    Description: Domain yang diizinkan mengakses API (isi dengan domain CloudFront setelah frontend dideploy)
+
+Globals:
+  Function:
+    Runtime: nodejs20.x
+    Timeout: 10
+    MemorySize: 256
+    VpcConfig:
+      SubnetIds: !Ref VpcSubnetIds
+      SecurityGroupIds:
+        - !Ref VpcSecurityGroupId
+    Environment:
+      Variables:
+        DB_PROXY_ENDPOINT: !Ref DbProxyEndpoint
+        DB_NAME: !Ref DbName
+        DB_SECRET_ARN: !Ref DbSecretArn
+    Layers:
+      - !Ref DbLayer
+
+Resources:
+  # -------------------------------------------------------------------------
+  # API Gateway (REST API) dengan CORS supaya frontend S3/CloudFront bisa
+  # memanggil endpoint ini dari browser.
+  # -------------------------------------------------------------------------
+  SekolahApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      Cors:
+        AllowMethods: "'GET,POST,OPTIONS'"
+        AllowHeaders: "'Content-Type'"
+        AllowOrigin: !Sub "'${CorsAllowOrigin}'"
+
+  # -------------------------------------------------------------------------
+  # Lambda Layer: modul koneksi database (mysql2 + AWS SDK Secrets Manager)
+  # dipakai ulang oleh semua function supaya tidak duplikasi kode koneksi.
+  # -------------------------------------------------------------------------
+  DbLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: db-connection-layer
+      ContentUri: src/layers/db/
+      CompatibleRuntimes:
+        - nodejs20.x
+      RetentionPolicy: Delete
+    Metadata:
+      BuildMethod: nodejs20.x
+
+  # -------------------------------------------------------------------------
+  # IAM Managed Policy bersama: akses baca secret DB.
+  # rds-db:connect tidak diperlukan di sini karena autentikasi ke RDS Proxy
+  # memakai username/password lewat Secrets Manager (bukan IAM auth token).
+  # -------------------------------------------------------------------------
+
+  GetProfilSekolahFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: getProfil.handler
+      CodeUri: src/handlers/sekolah/
+      Policies:
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Ref DbSecretArn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SekolahApi
+            Path: /sekolah
+            Method: GET
+
+  ListBeritaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: listBerita.handler
+      CodeUri: src/handlers/berita/
+      Policies:
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Ref DbSecretArn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SekolahApi
+            Path: /berita
+            Method: GET
+
+  GetBeritaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: getBerita.handler
+      CodeUri: src/handlers/berita/
+      Policies:
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Ref DbSecretArn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SekolahApi
+            Path: /berita/{id}
+            Method: GET
+
+  ListGuruFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: listGuru.handler
+      CodeUri: src/handlers/guru/
+      Policies:
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Ref DbSecretArn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SekolahApi
+            Path: /guru
+            Method: GET
+
+  ListGaleriFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: listGaleri.handler
+      CodeUri: src/handlers/galeri/
+      Policies:
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Ref DbSecretArn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SekolahApi
+            Path: /galeri
+            Method: GET
+
+  CreatePpdbFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: createPpdb.handler
+      CodeUri: src/handlers/ppdb/
+      Policies:
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Ref DbSecretArn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SekolahApi
+            Path: /ppdb
+            Method: POST
+
+  CreateKontakFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: createKontak.handler
+      CodeUri: src/handlers/kontak/
+      Policies:
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Ref DbSecretArn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SekolahApi
+            Path: /kontak
+            Method: POST
+
+Outputs:
+  ApiBaseUrl:
+    Description: Base URL API Gateway - pakai nilai ini untuk isi frontend/assets/js/config.js
+    Value: !Sub "https://${SekolahApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"

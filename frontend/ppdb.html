@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PPDB - Website Sekolah</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <h1>🏫 Website Sekolah</h1>
+      <nav class="site-nav">
+        <a href="index.html">Beranda</a>
+        <a href="berita.html">Berita</a>
+        <a href="guru.html">Guru &amp; Staff</a>
+        <a href="galeri.html">Galeri</a>
+        <a href="ppdb.html">PPDB</a>
+        <a href="kontak.html">Kontak</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <h2>Pendaftaran Peserta Didik Baru (PPDB)</h2>
+    <div class="card">
+      <form id="ppdb-form">
+        <label for="nama_lengkap">Nama Lengkap Calon Siswa *</label>
+        <input type="text" id="nama_lengkap" name="nama_lengkap" required />
+
+        <label for="nisn">NISN (opsional)</label>
+        <input type="text" id="nisn" name="nisn" />
+
+        <label for="nama_wali">Nama Orang Tua / Wali *</label>
+        <input type="text" id="nama_wali" name="nama_wali" required />
+
+        <label for="telepon">No. Telepon *</label>
+        <input type="tel" id="telepon" name="telepon" required />
+
+        <label for="email">Email *</label>
+        <input type="email" id="email" name="email" required />
+
+        <label for="asal_sekolah">Asal Sekolah</label>
+        <input type="text" id="asal_sekolah" name="asal_sekolah" />
+
+        <label for="jenjang_dituju">Jenjang yang Dituju *</label>
+        <select id="jenjang_dituju" name="jenjang_dituju" required>
+          <option value="">-- Pilih jenjang --</option>
+          <option value="Kelas 7">Kelas 7 (SMP)</option>
+          <option value="Kelas 10">Kelas 10 (SMA)</option>
+        </select>
+
+        <button type="submit">Daftar Sekarang</button>
+        <div id="form-alert" class="alert"></div>
+      </form>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    Latihan AWS Lambda — Website Sekolah Serverless
+  </footer>
+
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script>
+    const form = document.getElementById("ppdb-form");
+    const alertEl = document.getElementById("form-alert");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const payload = Object.fromEntries(new FormData(form).entries());
+      try {
+        const res = await apiPost("/ppdb", payload);
+        showAlert(alertEl, `${res.message} (No. Pendaftaran: ${res.id})`, "success");
+        form.reset();
+      } catch (err) {
+        showAlert(alertEl, err.message, "error");
+      }
+    });
+  </script>
+</body>
+</html>

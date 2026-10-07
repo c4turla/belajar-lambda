@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Berita - Website Sekolah</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <h1>🏫 Website Sekolah</h1>
+      <nav class="site-nav">
+        <a href="index.html">Beranda</a>
+        <a href="berita.html">Berita</a>
+        <a href="guru.html">Guru &amp; Staff</a>
+        <a href="galeri.html">Galeri</a>
+        <a href="ppdb.html">PPDB</a>
+        <a href="kontak.html">Kontak</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <h2>Berita &amp; Pengumuman</h2>
+
+    <div id="detail-container" style="display:none" class="card"></div>
+
+    <div id="list-container">
+      <p class="muted">Memuat berita...</p>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    Latihan AWS Lambda — Website Sekolah Serverless
+  </footer>
+
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const beritaId = params.get("id");
+
+    async function loadList() {
+      const listEl = document.getElementById("list-container");
+      try {
+        const items = await apiGet("/berita");
+        if (items.length === 0) {
+          listEl.innerHTML = '<p class="muted">Belum ada berita.</p>';
+          return;
+        }
+        listEl.innerHTML = items
+          .map(
+            (b) => `
+          <div class="card">
+            <h3><a href="berita.html?id=${b.id}">${escapeHtml(b.judul)}</a></h3>
+            <p class="muted">${formatTanggal(b.created_at)}</p>
+            <p>${escapeHtml(b.ringkasan)}</p>
+          </div>
+        `
+          )
+          .join("");
+      } catch (err) {
+        listEl.innerHTML = `<p class="muted">Gagal memuat berita: ${escapeHtml(err.message)}</p>`;
+      }
+    }
+
+    async function loadDetail(id) {
+      const detailEl = document.getElementById("detail-container");
+      document.getElementById("list-container").style.display = "none";
+      detailEl.style.display = "block";
+      try {
+        const b = await apiGet(`/berita/${id}`);
+        detailEl.innerHTML = `
+          <p><a href="berita.html">&larr; Kembali ke daftar berita</a></p>
+          <h2>${escapeHtml(b.judul)}</h2>
+          <p class="muted">${formatTanggal(b.created_at)}</p>
+          <p>${escapeHtml(b.isi)}</p>
+        `;
+      } catch (err) {
+        detailEl.innerHTML = `<p class="muted">Gagal memuat detail berita: ${escapeHtml(err.message)}</p>`;
+      }
+    }
+
+    if (beritaId) {
+      loadDetail(beritaId);
+    } else {
+      loadList();
+    }
+  </script>
+</body>
+</html>

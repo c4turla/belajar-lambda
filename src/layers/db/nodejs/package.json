@@ -1,0 +1,9 @@
+{
+  "name": "db-connection-layer",
+  "version": "1.0.0",
+  "description": "Shared DB connection helper for school website Lambda functions",
+  "dependencies": {
+    "mysql2": "^3.11.0",
+    "@aws-sdk/client-secrets-manager": "^3.637.0"
+  }
+}
